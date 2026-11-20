@@ -6,3 +6,12 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+
+# build outputs and local state
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env
+*.duckdb
+.~lock.*#

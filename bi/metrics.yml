@@ -1,0 +1,109 @@
+# Metric layer: each KPI is defined once and expressed for every BI tool in use.
+# `sql` is executed against the mart_sales_flat table and verified by tests/test_metrics.py.
+# The dax / tableau / looker_studio expressions are hand-written equivalents and are NOT executed in those tools here.
+source_table: mart_sales_flat
+power_bi_table: sales_flat          # name of the table when mart_sales_flat is loaded into Power BI / Fabric
+
+metrics:
+  - name: revenue
+    label: Revenue
+    format: currency
+    description: Net sales after discounts.
+    sql: SUM(sales)
+    dax: SUM(sales_flat[sales])
+    tableau: SUM([Sales])
+    looker_studio: SUM(sales)
+
+  - name: profit
+    label: Profit
+    format: currency
+    description: Profit as reported per order line in the source data (the source does not document its exact definition).
+    sql: SUM(profit)
+    dax: SUM(sales_flat[profit])
+    tableau: SUM([Profit])
+    looker_studio: SUM(profit)
+
+  - name: profit_margin
+    label: Profit margin
+    format: percent
+    description: Profit divided by revenue.
+    sql: SUM(profit) / NULLIF(SUM(sales), 0)
+    dax: DIVIDE(SUM(sales_flat[profit]), SUM(sales_flat[sales]))
+    tableau: SUM([Profit]) / SUM([Sales])
+    looker_studio: SUM(profit) / SUM(sales)
+
+  - name: orders
+    label: Orders
+    format: integer
+    description: Distinct orders (an order can have several lines).
+    sql: COUNT(DISTINCT order_id)
+    dax: DISTINCTCOUNT(sales_flat[order_id])
+    tableau: COUNTD([Order Id])
+    looker_studio: COUNT_DISTINCT(order_id)
+
+  - name: customers
+    label: Customers
+    format: integer
+    description: Distinct (masked) customers who ordered.
+    sql: COUNT(DISTINCT customer_id)
+    dax: DISTINCTCOUNT(sales_flat[customer_id])
+    tableau: COUNTD([Customer Id])
+    looker_studio: COUNT_DISTINCT(customer_id)
+
+  - name: avg_order_value
+    label: Average order value
+    format: currency
+    description: Revenue per distinct order.
+    sql: SUM(sales) / NULLIF(COUNT(DISTINCT order_id), 0)
+    dax: DIVIDE(SUM(sales_flat[sales]), DISTINCTCOUNT(sales_flat[order_id]))
+    tableau: SUM([Sales]) / COUNTD([Order Id])
+    looker_studio: SUM(sales) / COUNT_DISTINCT(order_id)
+
+  - name: units
+    label: Units sold
+    format: integer
+    description: Total quantity sold.
+    sql: SUM(quantity)
+    dax: SUM(sales_flat[quantity])
+    tableau: SUM([Quantity])
+    looker_studio: SUM(quantity)
+
+  - name: avg_discount
+    label: Average discount
+    format: percent
+    description: Mean discount across order lines (line-weighted, not revenue-weighted).
+    sql: AVG(discount)
+    dax: AVERAGE(sales_flat[discount])
+    tableau: AVG([Discount])
+    looker_studio: AVG(discount)
+
+  - name: loss_line_share
+    label: Loss-making line share
+    format: percent
+    description: Share of order lines with negative profit.
+    sql: AVG(CASE WHEN profit < 0 THEN 1.0 ELSE 0.0 END)
+    dax: DIVIDE(COUNTROWS(FILTER(sales_flat, sales_flat[profit] < 0)), COUNTROWS(sales_flat))
+    tableau: SUM(IIF([Profit] < 0, 1, 0)) / COUNT([Order Line Id])
+    looker_studio: SUM(CASE WHEN profit < 0 THEN 1 ELSE 0 END) / COUNT(order_line_id)
+
+  - name: avg_ship_days
+    label: Average days to ship
+    format: decimal
+    description: Mean days between order and ship date.
+    sql: AVG(ship_days)
+    dax: AVERAGE(sales_flat[ship_days])
+    tableau: AVG([Ship Days])
+    looker_studio: AVG(ship_days)
+
+dimensions:
+  - {name: order_date,    label: Order date}
+  - {name: year,          label: Year}
+  - {name: quarter,       label: Quarter}
+  - {name: year_month,    label: Year-month}
+  - {name: region,        label: Region}
+  - {name: state,         label: State}
+  - {name: segment,       label: Customer segment}
+  - {name: category,      label: Category}
+  - {name: sub_category,  label: Sub-category}
+  - {name: ship_mode,     label: Ship mode}
+  - {name: discount_band, label: Discount band}

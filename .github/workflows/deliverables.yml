@@ -1,0 +1,45 @@
+# Manual workflow: rebuild the Excel workbooks and the executive deck and upload them as artifacts.
+# STATUS: written, not yet run on GitHub Actions. Cached formula values are not stored by this job (Excel
+# recalculates on open); the committed workbooks had their values stored with a LibreOffice recalculation.
+name: Build deliverables
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-calc python3-uno
+      - run: pip install -e ".[deliverables]" && npm install --no-save pptxgenjs
+      - run: python -m superstore_pipeline run
+        env:
+          MASKING_KEY: ${{ secrets.MASKING_KEY }}
+      - run: python excel/build_workbook.py
+      - run: python excel/finance/build_dcf.py
+      - name: Native PivotTables (needs LibreOffice's Python bridge)
+        run: /usr/bin/python3 excel/build_pivottables.py
+        continue-on-error: true
+      - run: |
+          python reports/deck/build_deck_data.py
+          node reports/deck/build_deck.js
+          python reports/deck/apply_theme.py reports/Superstore_Executive_Deck.pptx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deliverables
+          path: |
+            excel/*.xlsx
+            excel/finance/*.xlsx
+            reports/Superstore_Executive_Deck.pptx

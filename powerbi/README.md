@@ -62,4 +62,19 @@ Six KPI cards (the measures above), a state-level table, a bar chart of deaths b
 
 ---
 
+## Rebuilding the report on the masked data (proposed)
+
+The `.pbix` files above are the original reports. To build a new report on the pipeline's masked flat extract:
+
+- Load [`../powerquery/20_sales_flat_masked.pq`](../powerquery/20_sales_flat_masked.pq) (with the `MartsFolder` parameter) as table `sales_flat`.
+- Add the measures in [`proposed_measures.dax`](proposed_measures.dax). They are hand-written from `bi/metrics.yml` and **not validated in Power BI Desktop**. Compare each against `reports/marts/mart_executive_kpis.csv`.
+- A step-by-step guide for Power BI, Looker Studio, Tableau and Cognos is in [`../bi/README.md`](../bi/README.md).
+
+### Observations from reading the Superstore model
+
+- No relationship from `Calendar` to `Orders` was detected in the data model. The time-intelligence measures (`PREVIOUSMONTH`, `SAMEPERIODLASTYEAR`, `DATESYTD`) need that relationship to work as intended, so check it in Model view.
+- `Revenue YTD 2` and `Revenue YTD 3` are duplicates of the same `TOTALYTD` pattern and could be consolidated.
+
+---
+
 Python analyses of the same data live in [`../notebooks/`](../notebooks/).

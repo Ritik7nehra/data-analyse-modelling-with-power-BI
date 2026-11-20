@@ -1,0 +1,35 @@
+// PROPOSED DAX MEASURES for a Power BI report built on the pipeline's masked flat extract (table `sales_flat`).
+// STATUS: hand-written from bi/metrics.yml. NOT validated in Power BI Desktop. Paste into a new report, create a
+// 'Calendar' date table related to sales_flat[order_date], and compare each result with bi/generated/metrics_reference.md
+// and reports/marts/mart_executive_kpis.csv before trusting them.
+//
+// The SQL versions of these measures ARE executed and tested (tests/test_metrics.py).
+
+// ---- core KPIs ---------------------------------------------------------------------------------------------
+Revenue            = SUM ( sales_flat[sales] )
+Profit             = SUM ( sales_flat[profit] )
+Profit Margin      = DIVIDE ( [Profit], [Revenue] )
+Orders             = DISTINCTCOUNT ( sales_flat[order_id] )
+Customers          = DISTINCTCOUNT ( sales_flat[customer_id] )
+Avg Order Value    = DIVIDE ( [Revenue], [Orders] )
+Units Sold         = SUM ( sales_flat[quantity] )
+Avg Discount       = AVERAGE ( sales_flat[discount] )
+Avg Days To Ship   = AVERAGE ( sales_flat[ship_days] )
+Loss Line Share    = DIVIDE ( COUNTROWS ( FILTER ( sales_flat, sales_flat[profit] < 0 ) ), COUNTROWS ( sales_flat ) )
+
+// ---- time intelligence (mirrors mart_monthly_sales: LAG / year-to-date window functions) -------------------
+Revenue PM         = CALCULATE ( [Revenue], PREVIOUSMONTH ( 'Calendar'[Date] ) )
+Revenue MoM %      = DIVIDE ( [Revenue] - [Revenue PM], [Revenue PM] )
+Revenue SPLY       = CALCULATE ( [Revenue], SAMEPERIODLASTYEAR ( 'Calendar'[Date] ) )
+Revenue YoY %      = DIVIDE ( [Revenue] - [Revenue SPLY], [Revenue SPLY] )
+Revenue YTD        = TOTALYTD ( [Revenue], 'Calendar'[Date] )
+Profit YTD         = TOTALYTD ( [Profit], 'Calendar'[Date] )
+
+// ---- discount analysis (mirrors mart_discount_impact) ------------------------------------------------------
+Deep Discount Lines    = CALCULATE ( COUNTROWS ( sales_flat ), sales_flat[discount] > 0.2 )
+Deep Discount Loss     = CALCULATE ( SUM ( sales_flat[profit] ), sales_flat[discount] > 0.2, sales_flat[profit] < 0 )
+Total Loss             = CALCULATE ( SUM ( sales_flat[profit] ), sales_flat[profit] < 0 )
+Deep Discount Loss Share = DIVIDE ( [Deep Discount Loss], [Total Loss] )
+
+// ---- share of total (mirrors the month-share measure in the original report) -------------------------------
+Revenue Share of Year  = DIVIDE ( [Revenue], CALCULATE ( [Revenue], REMOVEFILTERS ( 'Calendar'[Month], 'Calendar'[Month Number] ) ) )

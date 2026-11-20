@@ -1,0 +1,50 @@
+# Manual workflow: build the warehouse and load it into a BigQuery dataset.
+# STATUS: written, NOT executed. Needs a GCP project, a service account with BigQuery Data Editor and Job User,
+# and the secret GCP_SA_KEY (service-account JSON). Prefer Workload Identity Federation over a JSON key for real use.
+name: Deploy to BigQuery
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: GCP project id
+        required: true
+      dataset:
+        description: BigQuery dataset to create or refresh
+        required: true
+        default: superstore_analytics
+      location:
+        description: Dataset location
+        required: true
+        default: US
+      dry_run:
+        description: Only validate and print the plan
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: bigquery        # add required reviewers to this environment for a manual approval gate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e ".[bigquery]"
+      - run: python -m superstore_pipeline run --strict-masking
+        env:
+          MASKING_KEY: ${{ secrets.MASKING_KEY }}
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        run: python warehouse/bigquery/load_to_bigquery.py --project "${{ inputs.project_id }}" --dataset "${{ inputs.dataset }}" --dry-run
+      - uses: google-github-actions/auth@v2
+        if: ${{ !inputs.dry_run }}
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Load
+        if: ${{ !inputs.dry_run }}
+        run: python warehouse/bigquery/load_to_bigquery.py --project "${{ inputs.project_id }}" --dataset "${{ inputs.dataset }}" --location "${{ inputs.location }}"

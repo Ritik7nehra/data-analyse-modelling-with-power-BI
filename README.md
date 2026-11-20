@@ -1,13 +1,64 @@
-# Data Analysis and Modelling with Power BI and Python
+# Data Analysis and Modelling: Power BI, Python, SQL and Excel
 
-Three analytics projects that pair **Power BI data modelling and dashboards** with **Python analysis** (pandas, statistics, matplotlib/seaborn).
-The Power BI reports answer *"what happened?"*; the notebooks go further, asking *why*, and testing whether patterns are real.
+An end-to-end analytics project built around the Superstore sales data: a **tested ETL pipeline** with data-quality gates and **data masking**, a **star-schema warehouse** (DuckDB, with BigQuery DDL), BI marts, an **Excel workbook** with lookups and pivot tables, an illustrative **DCF valuation**, an **executive PowerPoint deck**, the original **Power BI reports**, and **CI workflows**. Two further projects (Nigeria Covid-19 and Disney box office) pair Power BI and Python analysis.
 
-| Project | Tools | What it shows |
-|---|---|---|
-| [**Superstore sales**](notebooks/superstore_sales_analysis.ipynb) | Power BI (star schema, DAX), Python | Growth, seasonality, loss-making products and the effect of discounting |
-| [**Nigeria Covid-19**](notebooks/nigeria_covid19_analysis.ipynb) | Power BI (web scrape, DAX), Python | State-level burden and fatality rates with confidence intervals |
-| [**Disney box office**](notebooks/disney_box_office_analysis.ipynb) | Python | Genre and rating revenue, inflation-adjusted comparison, statistical tests |
+**How to read the status labels:** ✅ built **and** tested or verified in this repo. 🟡 written but **not run**, because it needs an account or tool that was not available here (BigQuery, Looker Studio, Tableau, Cognos, Fabric, GitHub Actions). Those parts are specifications to build from, not claims of experience.
+
+## What is in this repo
+
+| Area | What it contains | Where | Status |
+|---|---|---|---|
+| ETL and pipeline management | Extract, validate (21 checks), mask, load, model, reconcile, publish; step DAG with fail-fast, JSONL run log, idempotent and byte-reproducible | [`src/`](src/superstore_pipeline), [`config/`](config), [docs](docs/pipeline_management.md) | ✅ |
+| Data masking | HMAC-SHA256 pseudonymisation, postcode generalisation, leak check, k-anonymity report | [`mask.py`](src/superstore_pipeline/mask.py), [docs](docs/data_masking.md) | ✅ (committed outputs use a public dev key, see the doc) |
+| SQL modelling (warehouse) | Star schema (4 dimensions, 1 fact) and 8 marts incl. window functions, RFM, ROLLUP, discount what-if | [`warehouse/duckdb/`](warehouse/duckdb/models) | ✅ executed and tested |
+| BigQuery modelling | Partitioned and clustered DDL, views, loader with dry run | [`warehouse/bigquery/`](warehouse/bigquery) | 🟡 parsed and dry-run only |
+| Power Query (ETL) | M queries extracted from the reports and refactored (staging query, parameters) | [`powerquery/`](powerquery) | 🟡 |
+| Excel lookups and pivot tables | INDEX/MATCH, VLOOKUP, SUMIFS pivot-style summaries, native PivotTables, charts, data validation | [`excel/`](excel) | ✅ values verified against pandas |
+| Financial modelling and valuation | Three-scenario DCF, WACC, WACC x growth sensitivity, Python cross-check | [`excel/finance/`](excel/finance), [`valuation.py`](src/superstore_pipeline/valuation.py) | ✅ mechanics (inputs are illustrative) |
+| Power BI sales report | Original `.pbix` reports, data model notes, proposed measures for the masked data | [`powerbi/`](powerbi) | ✅ original reports / 🟡 proposed measures |
+| BI dashboards: Looker Studio, Tableau, Cognos | One metric layer (SQL tested; DAX, Tableau, Looker Studio hand-written) and build guides | [`bi/`](bi) | 🟡 guides, no published dashboards |
+| Reports and PowerPoint | 10-slide executive deck with native charts and speaker notes | [`reports/`](reports) | ✅ |
+| CI/CD | Lint, tests, strict-mode pipeline run, notebook execution; manual deliverable and BigQuery-deploy workflows | [`.github/workflows/`](.github/workflows) | 🟡 commands verified locally, not yet run on GitHub |
+| Microsoft Fabric | Component-by-component mapping | [`docs/fabric_mapping.md`](docs/fabric_mapping.md) | 🟡 mapping only |
+| Notebooks | Three analyses (Superstore, Covid-19, Disney) | [`notebooks/`](notebooks) | ✅ two executed; Disney needs a CSV you add |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    SRC[Source CSV] --> EX[Extract] --> VAL[Validate<br/>21 checks] --> MSK[Mask] --> STG[(Staging)]
+    STG --> STAR[Star schema] --> MARTS[8 marts] --> REC[Reconcile] --> PUB[Publish CSVs]
+    PUB --> XL[Excel + PivotTables + DCF]
+    PUB --> PPT[Executive deck]
+    PUB --> BI[Power BI / Tableau /<br/>Looker Studio / Cognos]
+    STAR -.-> BQ[(BigQuery)]
+```
+
+Solid lines are built and tested; dotted lines are written but not run. Details: [`docs/architecture.md`](docs/architecture.md).
+
+## Quick start
+
+```bash
+pip install -e ".[dev,deliverables]"
+python -m superstore_pipeline run        # extract, validate, mask, load, model, reconcile, publish
+pytest                                    # masking, validation, pipeline, SQL, marts, Excel, DCF and deck tests
+ruff check . --exclude notebooks
+```
+
+`make help` lists every target (`make pipeline`, `make test`, `make excel`, `make dcf`, `make deck`, `make bq-dry-run`).
+Without `MASKING_KEY` the pipeline uses a public dev key and warns; set the variable and add `--strict-masking` for anything real.
+
+Key numbers the pipeline reconciles to on every run: **9,994 rows, $2,297,200.86 sales, $286,397.02 profit** (it stops if they differ).
+
+## Start here
+
+| If you want to | Open |
+|---|---|
+| See the findings in 10 slides | [`reports/Superstore_Executive_Deck.pptx`](reports/Superstore_Executive_Deck.pptx) |
+| Try lookups and pivot tables | [`excel/Superstore_Sales_Analysis.xlsx`](excel/Superstore_Sales_Analysis.xlsx) (Lookups sheet) and [`excel/Superstore_PivotTables.xlsx`](excel/Superstore_PivotTables.xlsx) |
+| Change valuation assumptions | [`excel/finance/Superstore_DCF_Valuation.xlsx`](excel/finance/Superstore_DCF_Valuation.xlsx) (Assumptions sheet) |
+| Read how the pipeline is run and recovered | [`docs/pipeline_management.md`](docs/pipeline_management.md) |
+| Build a Looker Studio, Tableau or Cognos dashboard | [`bi/README.md`](bi/README.md) |
 
 ---
 
@@ -59,18 +110,31 @@ The rewritten notebook fixes the original's main weaknesses: it uses the inflati
 
 ---
 
+---
+
 ## Repository layout
 
 ```
 .
-├── notebooks/            Python analyses (Superstore and Covid-19 notebooks include executed outputs)
-├── powerbi/              Power BI reports (.pbix) and a guide to their data models and DAX
-├── data/                 CSV data used by the notebooks (see data/README.md)
-├── scripts/              export_pbix_data.py: extracts the data embedded in the .pbix files
-└── reports/figures/      Charts used in this README
+├── src/superstore_pipeline/   ETL package: extract, validate, mask, warehouse, runner, CLI, valuation
+├── config/                    pipeline.yml (paths, masking, control totals)
+├── warehouse/
+│   ├── duckdb/models/         SQL models: dimensions, fact, marts (executed and tested)
+│   └── bigquery/              BigQuery DDL, views and loader (not run against BigQuery)
+├── powerquery/                Power Query (M) queries and parameters
+├── bi/                        Metric layer (metrics.yml), generated reference, Looker Studio / Tableau / Cognos guides
+├── excel/                     Workbook with lookups and pivots, native PivotTables, finance/ (DCF)
+├── reports/                   Executive deck (+ build scripts), marts/ (BI-ready CSVs), figures/
+├── powerbi/                   Power BI reports (.pbix), model notes, proposed DAX measures
+├── notebooks/                 Python analyses (Superstore and Covid-19 include executed outputs)
+├── tests/                     pytest suite: masking, validation, pipeline, marts, SQL, metrics, deliverables, valuation
+├── docs/                      Architecture, data masking, pipeline management, Fabric mapping
+├── data/                      Source CSVs used by the notebooks and the pipeline
+├── scripts/                   export_pbix_data.py: extracts the data embedded in the .pbix files
+└── .github/workflows/         CI and manual workflows
 ```
 
-## Running it
+## Running the notebooks
 
 ```bash
 pip install -r requirements.txt
@@ -84,10 +148,18 @@ pip install pbixray
 python scripts/export_pbix_data.py
 ```
 
-To explore the dashboards, open the `.pbix` files in Power BI Desktop. See [`powerbi/README.md`](powerbi/README.md) for what each contains.
+## Known limitations
+
+- **Customer tokens in committed outputs use a public dev key**, so they offer no secrecy (the source is a public sample data set). Real use needs a secret key; see [`docs/data_masking.md`](docs/data_masking.md).
+- **The DCF inputs are illustrative placeholders**, and the dataset has no balance sheet. Treat it as a demonstration of modelling mechanics, not a valuation.
+- **The discount what-if is a scenario, not a forecast.** It brackets outcomes with an upper bound and a floor because demand response to price is unknown.
+- **Native PivotTables were generated with LibreOffice**; open them in Excel and refresh to confirm they behave in your version.
+- **The Superstore Power BI model has no relationship from the date table to `Orders`** (see [`powerbi/README.md`](powerbi/README.md)).
+- **The Disney notebook needs a CSV that is not in the repo** (see [`data/README.md`](data/README.md)).
 
 ## Skills demonstrated
 
-Data modelling (star schema, relationships) · DAX (time intelligence, ratio measures) · Power Query (web and Excel sources) ·
-data validation and quality audits · exploratory analysis · statistical testing (Kruskal-Wallis, Spearman, Wilson intervals) ·
-data visualisation · clear written findings and caveats.
+Python ETL and pipeline design (validation gates, run logging, idempotency, reproducible outputs) · data masking (pseudonymisation, generalisation, key management) ·
+SQL modelling (star schema, window functions, ROLLUP, partitioned and clustered BigQuery DDL) · Excel (INDEX/MATCH, VLOOKUP, SUMIFS, PivotTables, data validation, charts) ·
+financial modelling (DCF, WACC, scenarios, sensitivity, cross-checking a spreadsheet against code) · Power BI data modelling and DAX · Power Query ·
+statistical analysis (Kruskal-Wallis, Spearman, Wilson intervals) · stakeholder reporting (executive deck) · testing and CI.
