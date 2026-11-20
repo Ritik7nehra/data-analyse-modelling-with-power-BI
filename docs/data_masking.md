@@ -26,7 +26,7 @@ The HMAC key is read from the `MASKING_KEY` environment variable (name set in `c
 
 - `tests/test_mask.py`: tokens are deterministic and depend on the key; they have the expected shape and hide the original; postcodes regain leading zeros; masking leaves business values unchanged; the leak detector catches a leak; strict mode refuses to run without a key; an environment key is used when set; the k-anonymity helper counts the smallest group.
 - `tests/test_pipeline.py` and `tests/test_marts.py`: the warehouse and every mart contain no raw customer IDs.
-- The CI workflow is written to run the pipeline in strict mode with an ephemeral key (not yet run on GitHub; the same command was run locally).
+- CI runs the pipeline in strict mode with an ephemeral key on every push (passing on GitHub Actions).
 
 ## Limits (read before relying on this)
 

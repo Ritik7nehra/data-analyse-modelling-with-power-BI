@@ -1,8 +1,10 @@
 # Data Analysis and Modelling: Power BI, Python, SQL and Excel
 
+[![CI](https://github.com/Ritik7nehra/data-analyse-modelling-with-power-BI/actions/workflows/ci.yml/badge.svg)](https://github.com/Ritik7nehra/data-analyse-modelling-with-power-BI/actions/workflows/ci.yml)
+
 An end-to-end analytics project built around the Superstore sales data: a **tested ETL pipeline** with data-quality gates and **data masking**, a **star-schema warehouse** (DuckDB, with BigQuery DDL), BI marts, an **Excel workbook** with lookups and pivot tables, an illustrative **DCF valuation**, an **executive PowerPoint deck**, the original **Power BI reports**, and **CI workflows**. Two further projects (Nigeria Covid-19 and Disney box office) pair Power BI and Python analysis.
 
-**How to read the status labels:** ✅ built **and** tested or verified in this repo. 🟡 written but **not run**, because it needs an account or tool that was not available here (BigQuery, Looker Studio, Tableau, Cognos, Fabric, GitHub Actions). Those parts are specifications to build from, not claims of experience.
+**How to read the status labels:** ✅ built **and** tested or verified in this repo. 🟡 written but **not run**, because it needs an account or tool that was not available here (BigQuery, Looker Studio, Tableau, Cognos, Fabric, and the two manual GitHub workflows). Those parts are specifications to build from, not claims of experience.
 
 ## What is in this repo
 
@@ -18,7 +20,8 @@ An end-to-end analytics project built around the Superstore sales data: a **test
 | Power BI sales report | Original `.pbix` reports, data model notes, proposed measures for the masked data | [`powerbi/`](powerbi) | ✅ original reports / 🟡 proposed measures |
 | BI dashboards: Looker Studio, Tableau, Cognos | One metric layer (SQL tested; DAX, Tableau, Looker Studio hand-written) and build guides | [`bi/`](bi) | 🟡 guides, no published dashboards |
 | Reports and PowerPoint | 10-slide executive deck with native charts and speaker notes | [`reports/`](reports) | ✅ |
-| CI/CD | Lint, tests, strict-mode pipeline run, notebook execution; manual deliverable and BigQuery-deploy workflows | [`.github/workflows/`](.github/workflows) | 🟡 commands verified locally, not yet run on GitHub |
+| CI/CD | CI: lint, tests on Python 3.11 and 3.13, strict-mode pipeline run, notebook execution | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | ✅ passing on GitHub Actions |
+| Manual workflows: rebuild deliverables, deploy to BigQuery | [`.github/workflows/`](.github/workflows) | 🟡 not run |
 | Microsoft Fabric | Component-by-component mapping | [`docs/fabric_mapping.md`](docs/fabric_mapping.md) | 🟡 mapping only |
 | Notebooks | Three analyses (Superstore, Covid-19, Disney) | [`notebooks/`](notebooks) | ✅ two executed; Disney needs a CSV you add |
 

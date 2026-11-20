@@ -1,5 +1,5 @@
 # Continuous integration: lint, test, run the pipeline end to end, execute the notebooks.
-# STATUS: written and every command was run locally, but this workflow has not yet run on GitHub Actions.
+# STATUS: passing on GitHub Actions (first run: push to main, all four jobs green).
 name: CI
 
 on:

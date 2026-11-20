@@ -63,8 +63,8 @@ Every run deletes and rebuilds the DuckDB file, so re-running after a fix is alw
 
 | Concern | Status |
 |---|---|
-| CI on every push and pull request (lint, tests, strict-mode run, notebook execution) | Written in `.github/workflows/ci.yml`; commands verified locally; **not yet run on GitHub Actions** |
-| Manual rebuild of Excel and deck artifacts | `.github/workflows/deliverables.yml`; not yet run |
+| CI on every push and pull request (lint, tests on Python 3.11 and 3.13, strict-mode run, notebook execution) | `.github/workflows/ci.yml`; **passing on GitHub Actions** |
+| Manual rebuild of Excel and deck artifacts | `.github/workflows/deliverables.yml`; **not run** (needs LibreOffice and Node on the runner) |
 | Manual BigQuery deployment with a dry-run option | `.github/workflows/bigquery-deploy.yml`; **not executed** (needs a GCP project and secrets) |
 | Scheduling | Not implemented. Options: a `schedule:` cron trigger in GitHub Actions, Cloud Scheduler plus Cloud Run, Airflow, or Fabric Data Factory pipelines (see [fabric_mapping.md](fabric_mapping.md)) |
 | Alerting | Not implemented. Add a failure notification step to the workflow or scheduler |
