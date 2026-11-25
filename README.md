@@ -39,19 +39,7 @@ flowchart LR
 
 Solid lines are built and tested; dotted lines are written but not run. Details: [`docs/architecture.md`](docs/architecture.md).
 
-## Quick start
 
-```bash
-pip install -e ".[dev,deliverables]"
-python -m superstore_pipeline run        # extract, validate, mask, load, model, reconcile, publish
-pytest                                    # masking, validation, pipeline, SQL, marts, Excel, DCF and deck tests
-ruff check . --exclude notebooks
-```
-
-`make help` lists every target (`make pipeline`, `make test`, `make excel`, `make dcf`, `make deck`, `make bq-dry-run`).
-Without `MASKING_KEY` the pipeline uses a public dev key and warns; set the variable and add `--strict-masking` for anything real.
-
-Key numbers the pipeline reconciles to on every run: **9,994 rows, $2,297,200.86 sales, $286,397.02 profit** (it stops if they differ).
 
 ## Start here
 
